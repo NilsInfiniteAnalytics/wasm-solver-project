@@ -16,22 +16,41 @@
             mod = result.module;
             inst = result.instance;
             go.run(inst); // Run the Go instance
-            plotSineWave(); // Call the plot function after the WASM module is loaded
+            plotSineWaveAndDerivative(); // Call the plot function after the WASM module is loaded
         });
 
-        function plotSineWave() {
-            // Assume getSineWave is a function that returns your sine wave data as a JSON string
-            const data = JSON.parse(getSineWave());
-            const trace = {
-                x: data.x,
-                y: data.sinWave,
-                type: 'scatter'
-            };
-            const layout = {
-                title: 'Sine Wave'
-            };
-            Plotly.newPlot('plot', [trace], layout);
-        }
+	function plotSineWaveAndDerivative() {
+        // Fetch and parse the sine wave data
+        const sineWaveData = JSON.parse(getSineWave());
+        const sineWaveTrace = {
+            x: sineWaveData.x,
+            y: sineWaveData.sinWave,
+            name: 'Sine Wave',
+            type: 'scatter'
+        };
+
+        // Fetch and parse the first derivative data
+        const derivativeData = JSON.parse(getFirstDerivative());
+        const derivativeTrace = {
+            x: derivativeData.x,
+            y: derivativeData.df,
+            name: 'First Derivative',
+            type: 'scatter'
+        };
+
+        const layout = {
+            title: 'Sine Wave and Its First Derivative',
+            xaxis: {
+                title: 'X'
+            },
+            yaxis: {
+                title: 'Y'
+            }
+        };
+
+        // Plot both the sine wave and its derivative
+        Plotly.newPlot('plot', [sineWaveTrace, derivativeTrace], layout);
+    }
     </script>
 </body>
 </html>
