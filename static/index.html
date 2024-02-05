@@ -1,0 +1,37 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Sine Wave Plot</title>
+    <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
+</head>
+<body>
+    <div id="plot"></div>
+
+    <script src="wasm_exec.js"></script>
+    <script>
+        const go = new Go(); // Instantiate the Go instance
+        let mod, inst;
+        WebAssembly.instantiateStreaming(fetch('solver_tests.wasm'), go.importObject).then((result) => {
+            mod = result.module;
+            inst = result.instance;
+            go.run(inst); // Run the Go instance
+            plotSineWave(); // Call the plot function after the WASM module is loaded
+        });
+
+        function plotSineWave() {
+            // Assume getSineWave is a function that returns your sine wave data as a JSON string
+            const data = JSON.parse(getSineWave());
+            const trace = {
+                x: data.x,
+                y: data.sinWave,
+                type: 'scatter'
+            };
+            const layout = {
+                title: 'Sine Wave'
+            };
+            Plotly.newPlot('plot', [trace], layout);
+        }
+    </script>
+</body>
+</html>
