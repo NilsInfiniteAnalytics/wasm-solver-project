@@ -9,7 +9,6 @@ import "encoding/json"
 
 var (
 	f []float64
-	fOld []float64
 	xDomain []float64
 	sinWave []float64
 	dx	float64
@@ -18,8 +17,6 @@ var (
 )
 
 func init() {
-	js.Global().Set("getSineWave", js.FuncOf(getSineWave))
-	js.Global().Set("getFirstDerivative", js.FuncOf(getFirstDerivative))
 	initializeData()
 }
 
@@ -33,17 +30,61 @@ func initializeData() {
 		sinWave[i] = math.Sin(xDomain[i])
 	}
 	f = sinWave
-	fOld = sinWave
 	CFL = 0.2
 	dt = CFL * dx
 }
 
-func rungeKutta4(dfdt []float64, f []float64, dt float64) []float64 {
-	
+func getTimeStep(this js.Value, args[] js.Value) interface{} {
+	return dt
 }
 
-func applyTimeStep(f []float64, dt float64) []float64 {
-	
+func runWaveEquation(this js.Value, args []js.Value) interface{} {
+}
+
+func dfdtFunc(u []float64) []float64 {
+	dudx = firstDerivativeCentralDiff(u, dx)
+	d2udx2 = firstDerivativeCentralDiff(dudx, dx)
+	return d2udx2
+}
+
+func rungeKutta4(f []float64, dt float64) []float64 {
+	n := len(f)
+	k1 := make([]float64, n)
+	k2 := make([]float64, n)
+	k3 := make([]float64, n)
+	k4 := make([]float64, n)
+	fNext := make([]float64, n)
+	temp := make([]float64, n)
+
+	// Calculate k1 = dt * f'(f)
+	for i, val := range dfdtFunc(f) {
+		k1[i] = dt * val
+	}
+	// Calculate k2 = dt * f'(f+k1/2)
+	for i := range f {
+		temp[i] = f[i] + k1[i]/2
+	}
+	for i, val := range dfdtFunc(temp) {
+		k2[i] = dt * val
+	}
+	// Calculate k3 = ft * f'(f+k2/2)
+	for i := range f {
+                  temp[i] = f[i] + k2[i]/2
+        }
+        for i, val := range dfdtFunc(temp) {
+                  k3[i] = dt * val
+	}
+	// Calculate k4 = dt * f'(f+k3)
+	for i := range f {
+        	temp[i] = f[i] + k3[i]
+    	}
+    	for i, val := range dfdtFunc(temp) {
+        	k4[i] = dt * val
+    	}
+	for i := range fNext {
+		fNext[i] = f[i] + (k1[i] + 2*k2[i] + 2*k3[i] + k4[i]) / 6
+	}
+	return fNext
 }
 
 func firstDerivativeCentralDiff(f []float64, h float64) []float64 {
