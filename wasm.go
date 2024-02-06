@@ -8,9 +8,13 @@ import "encoding/json"
 
 
 var (
+	f []float64
+	fOld []float64
 	xDomain []float64
 	sinWave []float64
 	dx	float64
+	dt	float64
+	CFL	float64
 )
 
 func init() {
@@ -28,6 +32,18 @@ func initializeData() {
 		xDomain[i] = float64(i) * dx
 		sinWave[i] = math.Sin(xDomain[i])
 	}
+	f = sinWave
+	fOld = sinWave
+	CFL = 0.2
+	dt = CFL * dx
+}
+
+func rungeKutta4(dfdt []float64, f []float64, dt float64) []float64 {
+	
+}
+
+func applyTimeStep(f []float64, dt float64) []float64 {
+	
 }
 
 func firstDerivativeCentralDiff(f []float64, h float64) []float64 {
