@@ -14,14 +14,17 @@ var (
 	dx	float64
 	dt	float64
 	CFL	float64
+	n	uint32
 )
 
 func init() {
 	initializeData()
+	js.Global().Set("getTimeStep", js.FuncOf(getTimeStep))
+	js.Global().Set("runWaveEquation", js.FuncOf(runWaveEquation))
 }
 
 func initializeData() {
-	const n = 100
+	n = 100
 	dx = float64(2 * math.Pi / float64(n-1))
 	xDomain = make([]float64, n)
 	sinWave = make([]float64, n)
@@ -30,20 +33,47 @@ func initializeData() {
 		sinWave[i] = math.Sin(xDomain[i])
 	}
 	f = sinWave
-	CFL = 0.2
+	f[0] = 0
+	f[n-1] = 0
+	CFL = 0.15
 	dt = CFL * dx
 }
 
+func logToJS(v interface{}){
+	msg := fmt.Sprintf("%+v", v)
+	js.Global().Get("console").Call("log", msg)
+}
+
 func getTimeStep(this js.Value, args[] js.Value) interface{} {
-	return dt
+	return js.ValueOf(dt)
 }
 
 func runWaveEquation(this js.Value, args []js.Value) interface{} {
+	steps := args[0].Int()
+	logToJS(fmt.Sprintf("Running simulation for %d steps", steps))
+	for step := 0; step < steps; step++ {
+		f = rungeKutta4(f, dt)
+		f[0] = 0
+		f[n-1] = 0
+	}
+	data := struct {
+                  X []float64 `json:"x"`
+                  F []float64 `json:"f"`
+          }{
+                  X: xDomain,
+                  F: f,
+          }
+          jsonData, err := json.Marshal(data)
+          if err != nil {
+                  fmt.Println("Error marshalling data: ", err)
+                  return nil
+          }
+          return js.ValueOf(string(jsonData))
 }
 
 func dfdtFunc(u []float64) []float64 {
-	dudx = firstDerivativeCentralDiff(u, dx)
-	d2udx2 = firstDerivativeCentralDiff(dudx, dx)
+	dudx := firstDerivativeCentralDiff(u, dx)
+	d2udx2 := firstDerivativeCentralDiff(dudx, dx)
 	return d2udx2
 }
 
@@ -98,9 +128,7 @@ func firstDerivativeCentralDiff(f []float64, h float64) []float64 {
 
 	// Edge Forward/Backward Differences
 	df[0] = (-3*f[0] + 4*f[1] - f[2]) / (2*h)
-	// Index adjustment
-	n = n - 1
-	df[n] = (3*f[n] - 4*f[n-1] + f[n-2]) / (2*h)
+	df[n-1] = (3*f[n-1] - 4*f[n-2] + f[n-3]) / (2*h)
 	
 	return df
 }

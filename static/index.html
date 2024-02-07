@@ -6,6 +6,7 @@
     <script src="https://cdn.plot.ly/plotly-2.27.0.min.js" charset="utf-8"></script>
 </head>
 <body>
+    <button id="startSimulation">Start Simulation</button>
     <div id="plot"></div>
 
     <script src="wasm_exec.js"></script>
@@ -15,13 +16,36 @@
         WebAssembly.instantiateStreaming(fetch('solver_tests.wasm'), go.importObject).then((result) => {
             mod = result.module;
             inst = result.instance;
-            go.run(inst); // Run the Go instance
+            go.run(inst);
+	    document.getElementById('startSimulation').addEventListener('click', runSimulation);
         });
 	
 	async function runSimulation() {
 		let isRunning = true;
-		let tFinal = 10.0;
+		let currentTime = 0.0;
 		let dt = getTimeStep();
+		const tFinal = dt * 100;
+		const nSteps = 5;
+		const updateDelay = 100;
+
+		while (isRunning && currentTime < tFinal){
+			const newState = runWaveEquation(nSteps);
+			console.log(JSON.parse(newState));
+			updatePlot(JSON.parse(newState));
+			currentTime += dt;
+			if (currentTime >= tFinal) isRunning = false;
+			await new Promise(resolve => setTimeout(resolve, updateDelay));
+		}
+	}
+
+	function updatePlot(newState) {
+		Plotly.react('plot', [{
+			x: newState.x,
+			y: newState.f,
+			type: 'scatter'
+		}], {
+			title: 'Wave Simulation'
+		});
 	}
     </script>
 </body>
