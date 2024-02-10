@@ -25,26 +25,29 @@
 		let currentTime = 0.0;
 		let dt = getTimeStep();
 		const tFinal = dt * 10;
-		const nSteps = 1;
+		const nSteps = 1000;
 		const updateDelay = 100;
 
 		while (isRunning && currentTime < tFinal){
 			const newState = runWaveEquation(nSteps);
-			console.log(JSON.parse(newState));
-			updatePlot(JSON.parse(newState));
+			updatePlot(JSON.parse(newState), currentTime);
 			currentTime += dt;
 			if (currentTime >= tFinal) isRunning = false;
 			await new Promise(resolve => setTimeout(resolve, updateDelay));
 		}
 	}
 
-	function updatePlot(newState) {
+	function updatePlot(newState, t) {
+		titleString = "Wave Simulation, t=" + t.toString();
 		Plotly.react('plot', [{
 			x: newState.x,
 			y: newState.f,
 			type: 'scatter'
 		}], {
-			title: 'Wave Simulation'
+			title: titleString,
+			yaxis: {
+				range: [-1.2, 1.2]
+			}
 		});
 	}
     </script>
